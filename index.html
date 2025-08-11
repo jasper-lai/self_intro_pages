@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>傑士伯 — 個人網站</title>
+    <meta name="description" content="傑士伯的自我介紹：ASP.NET Core、MSSQL、Oracle 作品與聯絡資訊。" />
+    <meta property="og:title" content="傑士伯 — 個人網站" />
+    <meta property="og:description" content="ASP.NET Core、MSSQL、Oracle 作品與聯絡資訊。" />
+    <meta property="og:type" content="website" />
+
+    <!-- Tailwind CDN（開啟 dark mode class） -->
+    <script>
+      window.tailwind = { darkMode: 'class' };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React 18 UMD + Babel Standalone（允許直接在單檔內寫 JSX） -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      html, body { height: 100%; }
+    </style>
+  </head>
+  <body class="bg-neutral-950 text-neutral-200">
+    <noscript>
+      <div style="padding:1rem; background:#fee2e2; color:#7f1d1d;">
+        需要啟用 JavaScript 才能檢視此頁面。
+      </div>
+    </noscript>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+      // ==========================
+      // 🔧 站點設定（可直接改這裡）
+      // ==========================
+      const config = {
+        name: "傑士伯",
+        tagline: "傑士伯的自我介紹",
+        highlights: [
+          { label: "ASP.NET Core", link: "https://www.jasperstudy.com/2024/02/aspnet-mvc-aspnet-core-mvc.html" },
+          { label: "MSSQL", link: "https://www.jasperstudy.com/2019/01/sql-server-how-to-view-page-content.html" },
+          { label: "Oracle", link: "https://www.jasperstudy.com/2024/03/oracle-cdb-pdb.html" },
+        ],
+        about:
+          "嗨，我是傑士伯。專注 ASP.NET Core、資料庫（MSSQL / Oracle）與實用開發筆記。這個頁面彙整了常用連結與代表文章，方便快速了解我做過的事。",
+        projects: [
+          {
+            title: "ASP.NET：MVC vs ASP.NET Core MVC",
+            description: "整理傳統 MVC 與 ASP.NET Core MVC 的差異與遷移重點。",
+            link: "https://www.jasperstudy.com/2024/02/aspnet-mvc-aspnet-core-mvc.html",
+            tech: ["ASP.NET", "ASP.NET Core", "MVC"],
+          },
+          {
+            title: "ASP.NET Core 8 + Serilog 日誌整合",
+            description: "在 Core 8 專案中導入 Serilog 的實務做法與設定範例。",
+            link: "https://www.jasperstudy.com/2024/03/aspnet-core-8-mvc-serilog.html",
+            tech: [".NET 8", "Serilog", "Logging"],
+          },
+          {
+            title: "MSSQL：如何檢視資料頁內容",
+            description: "一步步帶你查看 SQL Server 資料頁內容與實務應用場景。",
+            link: "https://www.jasperstudy.com/2019/01/sql-server-how-to-view-page-content.html",
+            tech: ["SQL Server", "Internals"],
+          },
+          {
+            title: "Oracle：CDB / PDB 核心觀念",
+            description: "快速理解多租戶架構、CDB 與 PDB 的差異與管理重點。",
+            link: "https://www.jasperstudy.com/2024/03/oracle-cdb-pdb.html",
+            tech: ["Oracle", "CDB", "PDB"],
+          },
+        ],
+        contacts: {
+          email: "user01@gmail.com",
+          github: "",
+          linkedin: "",
+          other: [{ label: "Blog", url: "https://www.jasperstudy.com/" }],
+        },
+        heroImage: "https://raw.githubusercontent.com/jasper-lai/20250620_ngrok/refs/heads/master/pictures/%E5%82%91%E5%A3%AB%E4%BC%AF%E5%9C%96%E5%83%8F.png",
+        showPerf: false,
+      };
+
+      // ==========================
+      // 🌈 SVG Icons
+      // ==========================
+      const MailIcon = (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+          <path d="M21 8.25v8.25a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 16.5V8.25M21 8.25l-8.19 5.46a2.25 2.25 0 0 1-2.62 0L3 8.25M21 8.25L12 3.75 3 8.25" />
+        </svg>
+      );
+      const GitHubIcon = (props) => (
+        <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+          <path d="M12 .5a12 12 0 0 0-3.79 23.4c.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.35-1.76-1.35-1.76-1.1-.75.08-.74.08-.74 1.22.09 1.87 1.25 1.87 1.25 1.08 1.86 2.83 1.32 3.52 1.01.11-.79.42-1.32.76-1.62-2.66-.3-5.47-1.33-5.47-5.91 0-1.31.47-2.39 1.24-3.24-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.87.12 3.17.77.85 1.24 1.93 1.24 3.24 0 4.59-2.81 5.61-5.49 5.9.43.37.81 1.1.81 2.22 0 1.6-.02 2.89-.02 3.28 0 .32.22.69.83.57A12 12 0 0 0 12 .5Z" />
+        </svg>
+      );
+      const LinkIcon = (props) => (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+          <path d="M13.5 10.5a3 3 0 1 1-4.24 4.24l-3-3a3 3 0 1 1 4.24-4.24l.53.53" />
+          <path d="M10.5 13.5a3 3 0 1 1 4.24-4.24l3 3a3 3 0 1 1-4.24 4.24l-.53-.53" />
+        </svg>
+      );
+
+      // ==========================
+      // 🧪 煙霧測試（保留 & 擴充）
+      // ==========================
+      function runSmokeTests(cfg) {
+        try {
+          const hasName = document.body.innerText.includes(cfg.name);
+          const hasTagline = document.body.innerText.includes(cfg.tagline);
+          console.assert(hasName, "[SMOKE] 應渲染姓名");
+          console.assert(hasTagline, "[SMOKE] 應渲染標語");
+          const chips = Array.from(document.querySelectorAll('a[rel="noopener noreferrer"], span.inline-flex')).filter(el => el.className?.includes('rounded-full'));
+          console.assert(chips.length >= 3, "[SMOKE] 應至少有 3 個 highlights chip");
+          const cards = document.querySelectorAll('[data-test="project-card"]');
+          console.assert(cards.length === cfg.projects.length, `[SMOKE] 專案卡片數量應為 ${cfg.projects.length}`);
+          const mail = document.querySelector('a[href^="mailto:"]');
+          console.assert(!!mail, "[SMOKE] 應存在 mailto 連結");
+
+          if (cfg.showPerf) {
+            const badge = document.getElementById('perf-badge');
+            console.assert(!!badge, '[SMOKE] perf badge 應存在（showPerf=true）');
+          }
+
+          const navBtns = document.querySelectorAll('nav button');
+          console.assert(navBtns.length >= 3, '[SMOKE] nav 應至少 3 個按鈕');
+
+          if (cfg.heroImage) {
+            const heroImg = document.querySelector('img[alt="Hero"]');
+            console.assert(!!heroImg, '[SMOKE] heroImage 已設定則應渲染 <img>');
+          }
+
+          const linkedCount = (cfg.highlights || []).filter(h => !!h.link).length;
+          const linkedAnchors = document.querySelectorAll('#home a[rel="noopener noreferrer"]');
+          console.assert(linkedAnchors.length >= linkedCount, '[SMOKE] highlights 外連數量不應少於設定');
+
+          if (cfg.contacts?.email) {
+            const mailExact = document.querySelector(`a[href="mailto:${cfg.contacts.email}"]`);
+            console.assert(!!mailExact, '[SMOKE] mailto 需與 config.contacts.email 一致');
+          }
+        } catch (err) {
+          console.warn('[SMOKE] 測試例外：', err);
+        }
+      }
+
+      // ==========================
+      // ⚡ 載入時間量測（可透過 config.showPerf 開關顯示）
+      // ==========================
+      const MODULE_EVAL_T0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+
+      function getNavTimings() {
+        try {
+          const nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+          if (nav) return { ttfb: nav.responseStart, dcl: nav.domContentLoadedEventEnd, load: nav.loadEventEnd };
+          const t = performance.timing;
+          if (t) {
+            const base = t.navigationStart;
+            return { ttfb: t.responseStart - base, dcl: t.domContentLoadedEventEnd - base, load: t.loadEventEnd - base };
+          }
+        } catch {}
+        return { ttfb: null, dcl: null, load: null };
+      }
+      function observePaint(updater) {
+        if (!('PerformanceObserver' in window)) return null;
+        try {
+          const obs = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              if (entry.name === 'first-paint') updater((m) => ({ ...m, fp: entry.startTime }));
+              if (entry.name === 'first-contentful-paint') updater((m) => ({ ...m, fcp: entry.startTime }));
+            }
+          });
+          obs.observe({ type: 'paint', buffered: true });
+          return obs;
+        } catch { return null; }
+      }
+      const ms = (v) => (v == null || Number.isNaN(v)) ? '—' : `${Math.round(v)} ms`;
+
+      const PerfBadge = ({ metrics }) => {
+        const items = [
+          { k: 'FP', v: metrics.fp },
+          { k: 'FCP', v: metrics.fcp },
+          { k: 'TTFB', v: metrics.ttfb },
+          { k: 'DCL', v: metrics.dcl },
+          { k: 'Load', v: metrics.load },
+          { k: 'React', v: metrics.mount },
+        ];
+        return (
+          <div id="perf-badge" className="fixed left-4 bottom-6 z-50 rounded-xl border border-neutral-300/70 bg-white/90 px-3 py-2 text-xs shadow dark:border-neutral-700/70 dark:bg-neutral-900/80">
+            <div className="font-semibold mb-1">⏱ 載入量測</div>
+            <div className="grid grid-cols-3 gap-x-3 gap-y-1">
+              {items.map((it) => (
+                <div key={it.k} className="flex items-center justify-between gap-2">
+                  <span className="text-neutral-500 dark:text-neutral-400">{it.k}</span>
+                  <span className="tabular-nums">{ms(it.v)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      // ==========================
+      // 🧩 UI 元件
+      // ==========================
+      const Chip = ({ children, href }) => {
+        const base = "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm hover:shadow transition";
+        return href ? (
+          <a className={`${base} border-neutral-300/70 dark:border-neutral-700/70`} href={href} target="_blank" rel="noopener noreferrer">
+            <span>{children}</span>
+            <LinkIcon className="h-4 w-4" />
+          </a>
+        ) : (
+          <span className={`${base} border-neutral-300/70 dark:border-neutral-700/70`}>{children}</span>
+        );
+      };
+
+      const Section = ({ id, title, children }) => (
+        <section id={id} className="scroll-mt-24 py-14 md:py-20">
+          <div className="mx-auto max-w-5xl px-4">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">{title}</h2>
+            <div className="mt-6 text-neutral-700 dark:text-neutral-300 leading-relaxed">{children}</div>
+          </div>
+        </section>
+      );
+
+      const ProjectCard = ({ title, description, link, tech }) => (
+        <div data-test="project-card" className="rounded-2xl border border-neutral-200/70 dark:border-neutral-800/80 p-6 hover:shadow-lg transition">
+          <div className="flex items-start justify-between gap-4">
+            <h3 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-neutral-50">{title}</h3>
+            {link && (
+              <a href={link} className="text-sm underline underline-offset-4 hover:opacity-80" target="_blank" rel="noreferrer noopener">查看</a>
+            )}
+          </div>
+          <p className="mt-3 text-neutral-700 dark:text-neutral-300">{description}</p>
+          {tech?.length ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {tech.map((t) => (
+                <span key={t} className="rounded-full bg-neutral-100 dark:bg-neutral-800/70 px-2.5 py-1 text-xs text-neutral-600 dark:text-neutral-300">{t}</span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      );
+
+      // ==========================
+      // 🖥️ 主組件
+      // ==========================
+      function PersonalSite() {
+        const [isDark, setIsDark] = React.useState(true);
+        const [metrics, setMetrics] = React.useState({ fp: null, fcp: null, ttfb: null, dcl: null, load: null, mount: null });
+        const [heroUrl, setHeroUrl] = React.useState(null);
+        const [imgErr, setImgErr] = React.useState(false);
+        const fileRef = React.useRef(null);
+        const handleChooseAvatar = () => fileRef.current?.click();
+        const onFile = (e) => { const f = e.target.files?.[0]; if (!f) return; const url = URL.createObjectURL(f); setHeroUrl(url); setImgErr(false); };
+
+        const navItems = [
+          { id: "home", label: "首頁" },
+          { id: "about", label: "關於我" },
+          { id: "projects", label: "作品" },
+          { id: "contact", label: "聯絡" },
+        ];
+
+        const handleJump = (id) => {
+          const el = document.getElementById(id);
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+
+        React.useEffect(() => {
+          if (typeof window !== 'undefined') {
+            const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            const mount = now - MODULE_EVAL_T0;
+            const nav = getNavTimings();
+            setMetrics((m) => ({ ...m, mount, ...nav }));
+            const obs = observePaint(setMetrics);
+            const t = setTimeout(() => runSmokeTests(config), 0);
+            return () => { clearTimeout(t); obs && obs.disconnect && obs.disconnect(); };
+          }
+        }, []);
+
+        return (
+          <div className={isDark ? "dark" : ""}>
+            <main className="min-h-screen bg-white text-neutral-800 antialiased dark:bg-neutral-950 dark:text-neutral-200">
+              {/* 導覽列 */}
+              <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/60 supports-[backdrop-filter]:dark:bg-neutral-950/40">
+                <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+                  <button onClick={() => handleJump("home")} className="text-base md:text-lg font-semibold tracking-tight">
+                    {config.name}
+                  </button>
+
+                  <nav className="hidden gap-4 md:flex">
+                    {navItems.map((n) => (
+                      <button key={n.id} onClick={() => handleJump(n.id)} className="rounded-xl px-3 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800">{n.label}</button>
+                    ))}
+                  </nav>
+
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setIsDark((v) => !v)} className="rounded-xl border border-neutral-300/70 px-3 py-1.5 text-sm hover:shadow dark:border-neutral-700/70" aria-label="切換深色/淺色">{isDark ? "🌙" : "☀️"}</button>
+                    <a href={`mailto:${config.contacts.email || "you@example.com"}`} className="rounded-xl border border-neutral-300/70 px-3 py-1.5 text-sm hover:shadow dark:border-neutral-700/70">聯絡我</a>
+                  </div>
+                </div>
+              </header>
+
+              {/* Hero */}
+              <section id="home" className="relative overflow-hidden">
+                <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-8 px-4 py-16 md:grid-cols-2 md:py-24">
+                  <div>
+                    <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-neutral-900 dark:text-white">{config.name}</h1>
+                    <p className="mt-4 text-lg md:text-xl text-neutral-700 dark:text-neutral-300">{config.tagline}</p>
+                    <div className="mt-6 flex flex-wrap gap-2">
+                      {config.highlights.map((h, i) => (<Chip key={i} href={h.link}>{h.label}</Chip>))}
+                    </div>
+                    <div className="mt-8 flex flex-wrap gap-3">
+                      <button onClick={() => handleJump("projects")} className="rounded-2xl bg-black px-5 py-2.5 text-white hover:opacity-90 dark:bg-white dark:text-black">看作品</button>
+                      <button onClick={() => handleJump("about")} className="rounded-2xl border px-5 py-2.5 hover:shadow dark:border-neutral-700/70">認識我</button>
+                      <button onClick={handleChooseAvatar} className="rounded-2xl border px-5 py-2.5 hover:shadow dark:border-neutral-700/70" title="更換頭像（本機檔案）">更換頭像</button>
+                      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center">
+                    <div className="relative h-48 w-48 md:h-64 md:w-64">
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-400 dark:from-neutral-800 dark:to-neutral-700 ring-4 ring-neutral-200 dark:ring-neutral-800" />
+                      <img src={heroUrl || config.heroImage} alt="Hero" onError={() => setImgErr(true)} className="absolute inset-0 h-full w-full rounded-full object-contain bg-white dark:bg-neutral-900" style={{ opacity: imgErr ? 0 : 1 }} />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* About */}
+              <Section id="about" title="關於我">
+                <p>{config.about}</p>
+              </Section>
+
+              {/* Projects */}
+              <Section id="projects" title="作品精選">
+                <div className="grid gap-5 md:grid-cols-2">
+                  {config.projects.map((p) => (<ProjectCard key={p.title} {...p} />))}
+                </div>
+              </Section>
+
+              {/* Contact */}
+              <Section id="contact" title="聯絡方式">
+                <div className="flex flex-col gap-4">
+                  {config.contacts?.email && (
+                    <a href={`mailto:${config.contacts.email}`} className="group inline-flex items-center gap-2 underline underline-offset-4 hover:opacity-90">
+                      <MailIcon className="h-5 w-5" /> {config.contacts.email}
+                    </a>
+                  )}
+                  {config.contacts?.github && config.contacts.github.trim() !== "" && (
+                    <a href={config.contacts.github} target="_blank" rel="noreferrer noopener" className="group inline-flex items-center gap-2 underline underline-offset-4 hover:opacity-90">
+                      <GitHubIcon className="h-5 w-5" /> GitHub
+                    </a>
+                  )}
+                  {config.contacts?.linkedin && config.contacts.linkedin.trim() !== "" && (
+                    <a href={config.contacts.linkedin} target="_blank" rel="noreferrer noopener" className="group inline-flex items-center gap-2 underline underline-offset-4 hover:opacity-90">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM0 8h5v16H0V8zm7.5 0h4.8v2.2h.07c.67-1.27 2.3-2.6 4.73-2.6 5.06 0 6 3.33 6 7.66V24h-5V16.5c0-1.79-.03-4.1-2.5-4.1-2.5 0-2.88 1.95-2.88 3.97V24h-5V8z"/></svg>
+                      LinkedIn
+                    </a>
+                  )}
+                  {config.contacts?.other?.length ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {config.contacts.other.map((o) => (<Chip key={o.label} href={o.url}>{o.label}</Chip>))}
+                    </div>
+                  ) : null}
+                </div>
+              </Section>
+
+              <footer className="border-t border-neutral-200/70 py-10 text-center text-sm text-neutral-500 dark:border-neutral-800/80">
+                © {new Date().getFullYear()} {config.name}. All rights reserved.
+              </footer>
+
+              {/* 依 showPerf 開關渲染效能徽章 */}
+              {config.showPerf ? <PerfBadge metrics={metrics} /> : null}
+            </main>
+
+            {/* Back to top */}
+            <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="fixed bottom-6 right-6 rounded-full border bg-white/90 px-3 py-2 text-sm shadow hover:shadow-lg dark:border-neutral-700/70 dark:bg-neutral-900/80" aria-label="回到頂部">↑</button>
+          </div>
+        );
+      }
+
+      // 渲染到頁面
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<PersonalSite />);
+    </script>
+  </body>
+</html>
