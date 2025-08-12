@@ -9,13 +9,13 @@
     <meta property="og:description" content="ASP.NET Core、MSSQL、Oracle 作品與聯絡資訊。" />
     <meta property="og:type" content="website" />
 
-    <!-- Tailwind CDN（開啟 dark mode class） -->
-    <script>
-      window.tailwind = { darkMode: 'class' };
-    </script>
+    <!-- Tailwind CDN（先載入 CDN，再設定 config，避免 tailwind 未定義） -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: 'class' };
+    </script>
 
-    <!-- React 18 UMD + Babel Standalone（允許直接在單檔內寫 JSX） -->
+    <!-- React 18 UMD + Babel Standalone（允許在單檔內寫 JSX） -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -23,8 +23,25 @@
     <style>
       html, body { height: 100%; }
     </style>
+
+    <!-- 頁面初載先套用主題（支援 dark / light / system），避免閃爍 -->
+    <script>
+      (function(){
+        try {
+          var m = localStorage.getItem('theme'); // 'dark' | 'light' | 'system' | null
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark;
+          if (!m) dark = true; // 無設定時預設 dark
+          else if (m === 'system') dark = !!prefersDark;
+          else dark = (m === 'dark');
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
-  <body class="bg-neutral-950 text-neutral-200">
+  <body>
     <noscript>
       <div style="padding:1rem; background:#fee2e2; color:#7f1d1d;">
         需要啟用 JavaScript 才能檢視此頁面。
@@ -140,6 +157,37 @@
             const mailExact = document.querySelector(`a[href="mailto:${cfg.contacts.email}"]`);
             console.assert(!!mailExact, '[SMOKE] mailto 需與 config.contacts.email 一致');
           }
+
+          // 應使用 Tailwind darkMode: 'class'，否則 HTML 上的 .dark 不會生效
+          try {
+            const strategy = (window.tailwind && window.tailwind.config && window.tailwind.config.darkMode) || 'media';
+            console.assert(strategy === 'class', '[SMOKE] Tailwind darkMode 應為 class');
+          } catch {}
+
+          // 額外測試：初始載入時 <html>.dark 是否與 localStorage('theme') 一致
+          try {
+            const saved = localStorage.getItem('theme');
+            let expectDark;
+            if (!saved) { expectDark = true; }
+            else if (saved === 'system') {
+              const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+              expectDark = !!prefersDark;
+            } else {
+              expectDark = (saved === 'dark');
+            }
+            console.assert(document.documentElement.classList.contains('dark') === expectDark, '[SMOKE] <html>.dark 應與保存主題一致');
+            // 新增：主題下拉選單檢查（存在且有 3 個選項；值應與保存一致或預設）
+            const themeSel = document.querySelector('select[data-test="theme-select"]');
+            console.assert(!!themeSel, '[SMOKE] 應存在主題下拉選單');
+            console.assert(themeSel && themeSel.options && themeSel.options.length === 3, '[SMOKE] 主題下拉需含 3 個選項');
+            // 固定寬度避免字寬變化導致抖動
+            const hasFixedWidth = themeSel.className.includes('w-') || themeSel.className.includes('min-w-');
+            console.assert(hasFixedWidth, '[SMOKE] 主題下拉需固定寬度或最小寬度');
+            try {
+              const savedMode = localStorage.getItem('theme') || 'dark';
+              console.assert(themeSel.value === savedMode, '[SMOKE] 下拉選單的值應與已保存主題一致');
+            } catch {}
+          } catch {}
         } catch (err) {
           console.warn('[SMOKE] 測試例外：', err);
         }
@@ -248,7 +296,16 @@
       // 🖥️ 主組件
       // ==========================
       function PersonalSite() {
-        const [isDark, setIsDark] = React.useState(true);
+        const THEME_KEY = 'theme';
+        const getInitialMode = () => {
+          try {
+            const saved = localStorage.getItem(THEME_KEY);
+            if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
+          } catch {}
+          return 'dark';
+        };
+        const [mode, setMode] = React.useState(getInitialMode());
+        const isDark = mode === 'dark';
         const [metrics, setMetrics] = React.useState({ fp: null, fcp: null, ttfb: null, dcl: null, load: null, mount: null });
         const [heroUrl, setHeroUrl] = React.useState(null);
         const [imgErr, setImgErr] = React.useState(false);
@@ -280,8 +337,35 @@
           }
         }, []);
 
+        // 主題切換：同步到 <html> 並保存到 localStorage
+        React.useEffect(() => {
+          try {
+            localStorage.setItem(THEME_KEY, mode);
+            const apply = () => {
+              const isDarkApplied = (mode === 'system')
+                ? (!!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+                : (mode === 'dark');
+              document.documentElement.classList.toggle('dark', isDarkApplied);
+            };
+            apply();
+            let mql;
+            const onChange = () => apply();
+            if (mode === 'system' && window.matchMedia) {
+              mql = window.matchMedia('(prefers-color-scheme: dark)');
+              if (mql.addEventListener) mql.addEventListener('change', onChange);
+              else if (mql.addListener) mql.addListener(onChange);
+            }
+            return () => {
+              if (mql) {
+                if (mql.removeEventListener) mql.removeEventListener('change', onChange);
+                else if (mql.removeListener) mql.removeListener(onChange);
+              }
+            };
+          } catch (e) {}
+        }, [mode]);
+
         return (
-          <div className={isDark ? "dark" : ""}>
+          <div>
             <main className="min-h-screen bg-white text-neutral-800 antialiased dark:bg-neutral-950 dark:text-neutral-200">
               {/* 導覽列 */}
               <header className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/60 supports-[backdrop-filter]:dark:bg-neutral-950/40">
@@ -297,7 +381,29 @@
                   </nav>
 
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setIsDark((v) => !v)} className="rounded-xl border border-neutral-300/70 px-3 py-1.5 text-sm hover:shadow dark:border-neutral-700/70" aria-label="切換深色/淺色">{isDark ? "🌙" : "☀️"}</button>
+                    {/* 主題下拉：Dark / Light / System + 浮動提示 */}
+                    <div className="relative group">
+                      <select
+                        data-test="theme-select"
+                        value={mode}
+                        onChange={(e) => setMode(e.target.value)}
+                        className="appearance-none rounded-xl border border-neutral-300/70 px-3 py-1.5 pr-8 text-sm bg-transparent hover:shadow dark:border-neutral-700/70 w-40 font-mono"
+                        aria-label="選擇主題"
+                        title="選擇主題"
+                      >
+                        <option value="dark">🌙 Dark</option>
+                        <option value="light">☀️ Light</option>
+                        <option value="system">🖥️ System</option>
+                      </select>
+                      {/* 浮動提示：滑過時顯示目前模式 */}
+                      <div
+                        className="pointer-events-none absolute -top-9 left-0 rounded-md border bg-white/90 px-2 py-1 text-xs shadow transition opacity-0 group-hover:opacity-100 dark:border-neutral-700/70 dark:bg-neutral-900/90"
+                        role="status"
+                        aria-live="polite"
+                      >
+                        目前：{mode==='dark'?'深色':mode==='light'?'淺色':'系統'}
+                      </div>
+                    </div>
                     <a href={`mailto:${config.contacts.email || "you@example.com"}`} className="rounded-xl border border-neutral-300/70 px-3 py-1.5 text-sm hover:shadow dark:border-neutral-700/70">聯絡我</a>
                   </div>
                 </div>
